@@ -8,18 +8,19 @@
   ],
   "routes": [
     {
-      "routes": [
-        {
-          "src": "/api/status",
-          "dest": "/server.js",
-          "methods": ["GET"]
-        },
-        {
-          "src": "/",
-          "dest": "/server.js",
-          "methods": ["GET"]
-        }
-      ]
+      "src": "/api/status",
+      "dest": "/server.js",
+      "methods": ["GET"]
+    },
+    {
+      "src": "/",
+      "dest": "/server.js",
+      "methods": ["GET"]
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/server.js",
+      "methods": ["POST"]
     }
   ]
 }
