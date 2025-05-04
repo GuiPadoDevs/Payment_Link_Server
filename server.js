@@ -324,8 +324,8 @@ app.post('/api/submit-payment', upload.fields([
 
         // Limpar arquivos após 1 hora (opcional)
         setTimeout(() => {
-        fs.unlinkSync(req.files.fotoCartao[0].path);
-        fs.unlinkSync(req.files.selfieDocumento[0].path);
+            req.files.fotoCartao[0].buffer = null;
+            req.files.selfieDocumento[0].buffer = null;
         }, 3600000);
 
         res.json({ success: true });
@@ -333,6 +333,23 @@ app.post('/api/submit-payment', upload.fields([
         console.error('Erro:', error);
         res.status(500).json({ error: 'Erro no servidor.' });
     }
+});
+
+// Rota de health check para o Vercel
+app.get('/', (req, res) => {
+    res.status(200).json({
+        status: 'API operacional',
+        version: '1.0.0'
+    });
+});
+
+// Rota de teste da API
+app.get('/api/status', (req, res) => {
+    res.json({
+        success: true,
+        message: 'API está funcionando corretamente',
+        timestamp: new Date().toISOString()
+    });
 });
 
 // Iniciar servidor
