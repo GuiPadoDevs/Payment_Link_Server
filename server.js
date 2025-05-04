@@ -50,8 +50,10 @@ const transporter = nodemailer.createTransport({
 // Rota para gerar links únicos
 app.post('/api/generate-link', (req, res) => {
     const uniqueId = uuidv4();
-    const link = `${process.env.FRONTEND_URL}/pagamento/${uniqueId}`;
-    res.json({ link });
+    res.json({
+        link: uniqueId,
+        fullUrl: `${process.env.FRONTEND_URL || 'https://seu-frontend.vercel.app'}/pagamento/${uniqueId}`
+    });
 });
 
 // Rota para processar pagamento
