@@ -7,7 +7,10 @@
     },
     {
       "src": "frontend/**",
-      "use": "@vercel/static"
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
     }
   ],
   "routes": [
@@ -17,7 +20,10 @@
     },
     {
       "src": "/pagamento/(.*)",
-      "dest": "/frontend/index.html"
+      "dest": "/frontend/index.html",
+      "headers": {
+        "Cache-Control": "no-cache"
+      }
     },
     {
       "src": "/(.*)",
