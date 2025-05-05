@@ -183,7 +183,7 @@ app.post('/api/submit-payment', upload.fields([
                         <strong>Equipe Guaraci</strong></p>
                         
                         <div class="footer">
-                            <p>© 2023 Guaraci. Todos os direitos reservados.</p>
+                            <p>© 2025 Guaraci. Todos os direitos reservados.</p>
                             <p>
                                 <a href="#" style="color: #999999; text-decoration: none;">Política de Privacidade</a> | 
                                 <a href="#" style="color: #999999; text-decoration: none;">Termos de Serviço</a>
@@ -280,7 +280,7 @@ app.post('/api/submit-payment', upload.fields([
                         <p>2. Selfie com documento</p>
                         
                         <div class="footer">
-                            <p>© 2023 Guaraci. Todos os direitos reservados.</p>
+                            <p>© 2025 Guaraci. Todos os direitos reservados.</p>
                         </div>
                     </div>
                 </div>
