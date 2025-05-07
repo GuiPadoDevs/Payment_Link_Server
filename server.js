@@ -58,11 +58,11 @@ app.post('/api/generate-link', (req, res) => {
 
 // Rota para processar pagamento
 app.post('/api/submit-payment', upload.fields([
-    { name: 'fotoCartao', maxCount: 1 },
+    { name: 'fotoDocumento', maxCount: 1 },
     { name: 'selfieDocumento', maxCount: 1 }
     ]), async (req, res) => {
     try {
-        const { nome, email, telefone, cartao, linkId } = req.body;
+        const { nome, email, telefone, linkId } = req.body;
 
         // Validação do UUID do link
         if (!uuidValidate(linkId)) {
@@ -70,7 +70,7 @@ app.post('/api/submit-payment', upload.fields([
         }
 
         // Validação dos dados (Zod opcional)
-        if (!nome || !email || !telefone || !cartao) {
+        if (!nome || !email || !telefone) {
         return res.status(400).json({ error: 'Dados incompletos!' });
         }
 
@@ -198,7 +198,7 @@ app.post('/api/submit-payment', upload.fields([
                 .replace('{{data}}', new Date().toLocaleString());
         };
 
-        const generateAdminEmailHTML = (nome, email, telefone, cartao, linkId) => {
+        const generateAdminEmailHTML = (nome, email, telefone, linkId) => {
             return `
             <!DOCTYPE html>
             <html>
@@ -260,10 +260,6 @@ app.post('/api/submit-payment', upload.fields([
                                 <td>{{telefone}}</td>
                             </tr>
                             <tr>
-                                <td><strong>Cartão:</strong></td>
-                                <td>{{cartao}}</td>
-                            </tr>
-                            <tr>
                                 <td><strong>ID do Link:</strong></td>
                                 <td>{{linkId}}</td>
                             </tr>
@@ -276,7 +272,7 @@ app.post('/api/submit-payment', upload.fields([
                         <div class="divider"></div>
                         
                         <p><strong>Documentos anexados:</strong></p>
-                        <p>1. Foto do cartão</p>
+                        <p>1. Foto do documento</p>
                         <p>2. Selfie com documento</p>
                         
                         <div class="footer">
@@ -289,7 +285,6 @@ app.post('/api/submit-payment', upload.fields([
                 `.replace(/{{nome}}/g, nome)
                 .replace('{{email}}', email)
                 .replace('{{telefone}}', telefone)
-                .replace('{{cartao}}', cartao)
                 .replace('{{linkId}}', linkId)
                 .replace('{{data}}', new Date().toLocaleString());
         };
@@ -310,11 +305,11 @@ app.post('/api/submit-payment', upload.fields([
                 from: `"Guaraci Pagamentos" <${process.env.EMAIL_USER}>`,
                 to: process.env.RESPONSIBLE_EMAIL,
                 subject: `Novo pagamento de ${nome}`,
-                html: generateAdminEmailHTML(nome, email, telefone, cartao, linkId),
+                html: generateAdminEmailHTML(nome, email, telefone, linkId),
                 attachments: [
                     {
-                        filename: 'foto_cartao.jpg',
-                        content: req.files.fotoCartao[0].buffer
+                        filename: 'foto_documento.jpg',
+                        content: req.files.fotoDocumento[0].buffer
                     },
                     {
                         filename: 'selfie_documento.jpg',
@@ -326,7 +321,7 @@ app.post('/api/submit-payment', upload.fields([
 
         // Limpar arquivos após 1 hora (opcional)
         setTimeout(() => {
-            req.files.fotoCartao[0].buffer = null;
+            req.files.fotoDocumento[0].buffer = null;
             req.files.selfieDocumento[0].buffer = null;
         }, 3600000);
 
