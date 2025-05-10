@@ -1,0 +1,17 @@
+# Arquivos do Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Variáveis de ambiente
+.env
+.env.local
+
+# Arquivos de IDE
+.idea/
+.vscode/
+*.swp
+
+# Arquivos de build
+dist/
+coverage/
